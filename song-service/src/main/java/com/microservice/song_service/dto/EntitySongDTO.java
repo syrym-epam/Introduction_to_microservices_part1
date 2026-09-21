@@ -34,23 +34,23 @@ public class EntitySongDTO {
     @Positive(message = "ID must be a positive number")
     public Long id;
 
-    @NotBlank(message = "Song name is required")
+    @NotNull(message = "Song name is required")
     @Size(min = 1, max = 100, message="Song name must be between 1 and 100 characters")
     public String name;
 
-    @NotBlank(message = "Artist name is required")
+    @NotNull(message = "Artist name is required")
     @Size(min = 1, max = 100, message="Artist name must be between 1 and 100 characters")
     public String artist;
 
-    @NotBlank(message = "Album name is required")
+    @NotNull(message = "Album name is required")
     @Size(min = 1, max = 100, message="Album name must be between 1 and 100 characters")
     public String album;
 
-    @NotBlank(message = "Duration is required")
+    @NotNull(message = "Duration is required")
     @Pattern(regexp = "^[0-5]\\d:[0-5]\\d$", message = "Duration must be in mm:ss format with leading zeros")
     public String duration;
 
-    @NotBlank(message = "Year is required")
+    @NotNull(message = "Year is required")
     @Pattern(regexp = "^(19|20)\\d{2}$", message = "Year must be between 1900 and 2099")
     public String year;
 }
