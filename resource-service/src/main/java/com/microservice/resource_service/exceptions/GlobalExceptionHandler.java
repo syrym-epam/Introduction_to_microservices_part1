@@ -12,10 +12,14 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.microservice.resource_service.dto.ErrorResponseDTO;
 import com.microservice.resource_service.dto.ErrorValidationResponseDTO;
+
+import jakarta.validation.ConstraintViolationException;
+
 
 @RestControllerAdvice 
 public class GlobalExceptionHandler {
@@ -52,7 +56,36 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
             "" + HttpStatus.BAD_REQUEST.value(),
-            ex.getMessage()
+            "Invalid value '%s' for ID. Must be a positive integer".formatted(ex.getValue())
+        );
+
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> validationControllerLevel(ConstraintViolationException ex) {
+       
+        String errorMessage = "";
+        String errorValue = "";
+        
+        if(!ex.getConstraintViolations().isEmpty()) {
+            var error = ex.getConstraintViolations().iterator().next(); 
+            errorMessage = error.getMessage();
+
+            var type = error.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName();
+            errorValue = switch (type) {
+                case "Size" -> String.valueOf(error.getInvalidValue().toString().length());
+                case "Pattern" -> error.getInvalidValue().toString()
+                    .replaceAll("(^|,)\\s*\\d+\\s*(?=,|$)", "")
+                    .replaceAll("^,|,$", "")
+                    .replaceAll(",{2,}", ",");
+                default -> error.getInvalidValue().toString();
+            };
+        }
+
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
+            "" + HttpStatus.BAD_REQUEST.value(),
+            errorMessage.formatted(errorValue)
         );
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
@@ -76,5 +109,21 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponseDTO> validationControllerError(HandlerMethodValidationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getParameterValidationResults().stream().forEach(error -> {
+            errors.put(error.getMethodParameter().getParameterName(), error.getArgument().toString());
+        });
+
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
+                "" + HttpStatus.BAD_REQUEST.value(),
+                "Invalid value '%s' for ID. Must be a positive integer"
+                        .formatted(ex.getParameterValidationResults().get(0).getArgument().toString())
+        );
+
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
 }

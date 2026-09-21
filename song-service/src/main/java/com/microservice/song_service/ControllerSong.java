@@ -5,14 +5,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.microservice.song_service.dto.EntitySongDTO;
 import com.microservice.song_service.dto.ResultIdDTO;
+import com.microservice.song_service.dto.ResultIdsDTO;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,14 +25,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
-
+@Validated 
 @RestController 
 @RequestMapping("/songs")
 public class ControllerSong {
 
     private ServiceSong serviceSong;
 
-    ControllerSong(ServiceSong serviceSong) {
+    public ControllerSong(ServiceSong serviceSong) {
         this.serviceSong = serviceSong;
     }
     
@@ -41,7 +45,8 @@ public class ControllerSong {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EntitySongDTO> getSongById(@PathVariable Long id) {
+    public ResponseEntity<EntitySongDTO> getSongById(
+            @Positive(message = "Invalid value '%s' for ID. Must be a positive integer") @PathVariable Long id) {
         EntitySongDTO entitySongDTO = serviceSong.getSongById(id);
 
         return ResponseEntity.status(HttpStatus.OK).body(entitySongDTO);
@@ -51,11 +56,19 @@ public class ControllerSong {
     public ResponseEntity<List<EntitySongDTO>> getListSong() {
         return ResponseEntity.status(HttpStatus.OK).body(serviceSong.getListSong());
     }
-    
-    
+
     @DeleteMapping()
-    public ResponseEntity<List<Long>> deleteAllSongById(@Size(max = 200, message = "CSV string length must not exceed 200 characters") @RequestParam("id") List<Long> ids) {
-        serviceSong.deleteAllSongById(ids);
-        return ResponseEntity.status(HttpStatus.OK).body(ids);
+    public ResponseEntity<ResultIdsDTO> deleteAllSongById(
+            @RequestParam("id") 
+            @Size(max = 200, message = "CSV string is too long: received %s characters, maximum allowed is 200")
+            @Pattern(
+                regexp = "^[1-9]\\d*(,[1-9]\\d*)*$", 
+                message = "Invalid ID format: '%s'. Only positive integers are allowed"
+            )
+            String Ids) {
+
+        List<Long> existingIds = serviceSong.deleteAllSongById(Ids);
+
+        return ResponseEntity.status(HttpStatus.OK).body(new ResultIdsDTO(existingIds));
     }
 }

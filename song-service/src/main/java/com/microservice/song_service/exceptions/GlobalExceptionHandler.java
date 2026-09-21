@@ -1,6 +1,6 @@
 package com.microservice.song_service.exceptions;
 
-import java.time.LocalDateTime;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +14,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import com.microservice.song_service.dto.ErrorResponseDTO;
 import com.microservice.song_service.dto.ErrorValidationResponseDTO;
+
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice 
 public class GlobalExceptionHandler {
@@ -36,9 +38,8 @@ public class GlobalExceptionHandler {
         });
 
         ErrorValidationResponseDTO errorResponseDTO = new ErrorValidationResponseDTO(
-            HttpStatus.BAD_REQUEST.value(),
-            ex.getDetailMessageCode(),
-            LocalDateTime.now(),
+            "" + HttpStatus.BAD_REQUEST.value(),
+            "Validation error",
             errors
         );
 
@@ -61,8 +62,36 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
             "" + HttpStatus.BAD_REQUEST.value(),
-            ex.getMessage()
+            "Invalid value '%s' for ID. Must be a positive integer".formatted(ex.getValue())
         );
+
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> validationControllerLevel(ConstraintViolationException ex) {
+
+        String errorMessage = "";
+        String errorValue = "";
+
+        if (!ex.getConstraintViolations().isEmpty()) {
+            var error = ex.getConstraintViolations().iterator().next();
+            errorMessage = error.getMessage();
+
+            var type = error.getConstraintDescriptor().getAnnotation().annotationType().getSimpleName();
+            errorValue = switch (type) {
+                case "Size" -> String.valueOf(error.getInvalidValue().toString().length());
+                case "Pattern" -> error.getInvalidValue().toString()
+                        .replaceAll("(^|,)\\s*\\d+\\s*(?=,|$)", "")
+                        .replaceAll("^,|,$", "")
+                        .replaceAll(",{2,}", ",");
+                default -> error.getInvalidValue().toString();
+            };
+        }
+
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
+                "" + HttpStatus.BAD_REQUEST.value(),
+                errorMessage.formatted(errorValue));
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }

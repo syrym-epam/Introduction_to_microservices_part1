@@ -8,16 +8,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class EntitySongDTO {
 
     public static EntitySongDTO fromEntitySong(EntitySong entitySong) {
@@ -38,20 +34,20 @@ public class EntitySongDTO {
     @Positive(message = "ID must be a positive number")
     public Long id;
 
-    @NotBlank(message = "Name is required")
-    @Size(min = 1, max = 100, message="Name must be between 1 and 100 character")
+    @NotBlank(message = "Song name is required")
+    @Size(min = 1, max = 100, message="Song name must be between 1 and 100 characters")
     public String name;
 
-    @NotBlank(message = "Artist is required")
-    @Size(min = 1, max = 100, message="Artist must be between 1 and 100 character")
+    @NotBlank(message = "Artist name is required")
+    @Size(min = 1, max = 100, message="Artist name must be between 1 and 100 characters")
     public String artist;
 
-    @NotBlank(message = "Album is required")
-    @Size(min = 1, max = 100, message="Album must be between 1 and 100 character")
+    @NotBlank(message = "Album name is required")
+    @Size(min = 1, max = 100, message="Album name must be between 1 and 100 characters")
     public String album;
 
     @NotBlank(message = "Duration is required")
-    @Pattern(regexp = "^\\d{2}:\\d{2}$", message = "Duration must be in mm:ss format with leading zeros")
+    @Pattern(regexp = "^[0-5]\\d:[0-5]\\d$", message = "Duration must be in mm:ss format with leading zeros")
     public String duration;
 
     @NotBlank(message = "Year is required")

@@ -4,6 +4,7 @@ package com.microservice.resource_service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -132,18 +133,18 @@ public class ServiceResource {
         return metaData;
     }
 
-    @Transactional 
-    public List<Long> deleteAllResourceByIDs(List<Long> Ids) {
-        List<EntityResource> existedResources = repositoryResource.findAllById(Ids);
-        List<Long> existingIds = existedResources.stream().map(EntityResource::getId).toList();
+    @Transactional
+    public List<Long> deleteAllResourceByIDs(String data) {
+        List<Long> Ids = Arrays.stream(data.split(",")).map(Long::valueOf).toList();
+        List<Long> existingIds = repositoryResource.findExistingIds(Ids);
 
-        repositoryResource.deleteAllById(existingIds);
+        repositoryResource.deleteAllByIdInBatch(existingIds);
 
         String result = existingIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 
         try {
-            restTemplate.delete(songServiceUrl + "/songs?id=" + result );
-        } catch(Exception e) {
+            restTemplate.delete(songServiceUrl + "/songs?id=" + result);
+        } catch (Exception e) {
             System.out.println(e);
         }
 

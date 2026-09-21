@@ -1,6 +1,7 @@
 package com.microservice.song_service;
 
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +30,7 @@ public class ServiceSong {
 
     public Long saveSong(EntitySongDTO entityDto) {
         if (repositorySong.existsById(entityDto.id)) {
-            throw new MetaDataExistExceptions("Metadata with the %d ID already exists".formatted(entityDto.id));
+            throw new MetaDataExistExceptions("Metadata for resource ID=%d already exists".formatted(entityDto.id));
         }
 
         EntitySong entitySong = new EntitySong();
@@ -55,15 +56,7 @@ public class ServiceSong {
         EntitySong entitySong = repositorySong.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Song metadata for ID=%d not found".formatted(id)));
 
-        EntitySongDTO entitySongDTO = EntitySongDTO
-                .builder()
-                .id(entitySong.getId())
-                .album(entitySong.getAlbum())
-                .artist(entitySong.getArtist())
-                .name(entitySong.getName())
-                .duration(entitySong.getDuration())
-                .year(entitySong.getYear())
-                .build();
+        EntitySongDTO entitySongDTO = EntitySongDTO.fromEntitySong(entitySong);
 
         return entitySongDTO;
     }
@@ -72,7 +65,11 @@ public class ServiceSong {
         return repositorySong.findAll().stream().map(EntitySongDTO::fromEntitySong).toList();
     }
 
-    public void deleteAllSongById(List<Long> ids) {
-        repositorySong.deleteAllById(ids); 
+    public List<Long> deleteAllSongById(String data) {
+        List<Long> Ids = Arrays.stream(data.split(",")).map(Long::valueOf).toList();
+        List<Long> existingIds = repositorySong.findExistingIds(Ids);
+        repositorySong.deleteAllByIdInBatch(existingIds); 
+
+        return existingIds;
     }
 }
