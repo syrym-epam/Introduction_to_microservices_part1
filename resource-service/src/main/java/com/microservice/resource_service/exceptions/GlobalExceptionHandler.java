@@ -126,4 +126,16 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(MetaDataFieldResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponseDTO> metaDataResourceNotFoundException(MetaDataFieldResourceNotFoundException ex) {
+
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
+            "" + HttpStatus.BAD_REQUEST.value(),
+            "Cannot find metadata field '%s'".formatted(ex.getMessage())
+        );
+
+
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+    }
 }

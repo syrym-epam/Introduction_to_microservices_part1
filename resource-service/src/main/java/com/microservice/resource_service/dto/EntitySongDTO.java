@@ -1,11 +1,15 @@
 package com.microservice.resource_service.dto;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public record EntitySongDTO(
-        Long id,
-        String name,
-        String artist,
-        String album,
-        String duration,
-        String year
-) { }
+@Data
+@NoArgsConstructor  
+public class EntitySongDTO {
+        Long id;
+        String name;
+        String artist;
+        String album;
+        String duration;
+        String year;
+}
