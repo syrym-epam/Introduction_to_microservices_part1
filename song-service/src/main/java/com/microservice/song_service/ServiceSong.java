@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import com.microservice.song_service.dto.EntitySongDTO;
 import com.microservice.song_service.exceptions.DataNotFoundException;
@@ -21,11 +20,9 @@ public class ServiceSong {
     String resourceServiceUrl;
 
     private RepositorySong repositorySong;
-    private final RestTemplate restTemplate;
 
     public ServiceSong(RepositorySong repositorySong) {
         this.repositorySong = repositorySong;
-        this.restTemplate = new RestTemplate();
     }
 
     public Long saveSong(EntitySongDTO entityDto) {
@@ -48,21 +45,12 @@ public class ServiceSong {
 
     @Transactional
     public EntitySongDTO getSongById(Long id) {
-        Boolean exist = restTemplate.getForObject(resourceServiceUrl + "/resources/exist/" + id, Boolean.class);
-
-        if (!exist)
-            throw new DataNotFoundException("Song metadata for ID=%d not found".formatted(id));
-
         EntitySong entitySong = repositorySong.findById(id)
                 .orElseThrow(() -> new DataNotFoundException("Song metadata for ID=%d not found".formatted(id)));
 
         EntitySongDTO entitySongDTO = EntitySongDTO.fromEntitySong(entitySong);
 
         return entitySongDTO;
-    }
-
-    public List<EntitySongDTO> getListSong() {
-        return repositorySong.findAll().stream().map(EntitySongDTO::fromEntitySong).toList();
     }
 
     public List<Long> deleteAllSongById(String data) {

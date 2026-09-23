@@ -48,11 +48,6 @@ public class ControllerResource {
         return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdDTO(id));
     }
 
-    @GetMapping("/exist/{id}")
-    public ResponseEntity<Boolean> checkResourceForExist(@PathVariable Long id) {
-        return ResponseEntity.status(200).body(serviceResource.existResource(id));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<byte[]> getResource( 
             @Positive(message = "Invalid value '%s' for ID. Must be a positive integer")
@@ -78,13 +73,5 @@ public class ControllerResource {
         List<Long> existingIds = serviceResource.deleteAllResourceByIDs(Ids);
 
         return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdsDTO(existingIds));
-    }
-
-    @DeleteMapping("/{Id}")
-    public ResponseEntity<ResourceIdDTO> deleteResource(@PathVariable Long Id) {
-
-        serviceResource.deleteResourceFileById(Id);
-
-        return ResponseEntity.status(HttpStatus.OK).body(new ResourceIdDTO(Id));
     }
 }

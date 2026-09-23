@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.microservice.resource_service.dto.EntitySongDTO;
@@ -69,14 +71,24 @@ public class ServiceResource {
 
         EntitySongDTO entitySongDTO = new EntitySongDTO(
             entityResource.getId(),
-            metadata.get("title") != null ? metadata.get("title") : "Unknown name",
-            metadata.get("xmpDM:artist") != null ? metadata.get("xmpDM:artist") : metadata.get("author") != null ? metadata.get("author") : "Unknown artist",
-            metadata.get("xmpDM:album") != null ? metadata.get("xmpDM:album") : "Unknown album",
-            calcDurationMP3(metadata.get("xmpDM:duration")),
-            metadata.get("xmpDM:releaseDate") != null ? metadata.get("xmpDM:releaseDate") : metadata.get("xmpDM:year") != null ? metadata.get("xmpDM:year") : "2000"
-        );
+                Optional.ofNullable(metadata.get("title")).orElse(" "),
+                Optional.ofNullable(metadata.get("xmpDM:artist"))
+                        .or(() -> Optional.ofNullable(metadata.get("author")))
+                        .orElse(" "),
+                Optional.ofNullable(metadata.get("xmpDM:album")).orElse(" "),
+                calcDurationMP3(metadata.get("xmpDM:duration")),
+                Optional.ofNullable(
+                        metadata.get("xmpDM:releaseDate"))
+                        .or(() -> Optional.ofNullable(metadata.get("xmpDM:releaseDate")))
+                        .or(() -> Optional.ofNullable(metadata.get("xmpDM:year"))).orElse(" "));
 
-        restTemplate.postForObject(songServiceUrl + "/songs", entitySongDTO, EntitySongDTO.class);
+        try {
+            restTemplate.postForObject(songServiceUrl + "/songs", entitySongDTO, EntitySongDTO.class);
+        } catch(HttpStatusCodeException ex) {
+
+        } catch(ResourceAccessException ex) {
+
+        }
 
         return entityResource.getId();
     }
@@ -149,12 +161,6 @@ public class ServiceResource {
         }
 
         return existingIds;
-    }
-
-    public Long deleteResourceFileById(Long Id) {
-        repositoryResource.deleteById(Id);
-
-        return Id;
     }
 
     public Boolean existResource(Long id) {

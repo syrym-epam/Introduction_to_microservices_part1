@@ -52,11 +52,6 @@ public class ControllerSong {
         return ResponseEntity.status(HttpStatus.OK).body(entitySongDTO);
     }
 
-    @GetMapping()
-    public ResponseEntity<List<EntitySongDTO>> getListSong() {
-        return ResponseEntity.status(HttpStatus.OK).body(serviceSong.getListSong());
-    }
-
     @DeleteMapping()
     public ResponseEntity<ResultIdsDTO> deleteAllSongById(
             @RequestParam("id") 
