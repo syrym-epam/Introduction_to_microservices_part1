@@ -2,21 +2,68 @@ services:
   resource-db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: resource-db
-      POSTGRES_USER: postgres  # Default, can be omitted if unchanged
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB_RESOURCE}
+      POSTGRES_USER: ${POSTGRES_USER}  # Default, can be omitted if unchanged
+      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"  # Maps container port 5432 to host port 5432
+    networks:
+      - app-network
+    volumes:
+      - ./init-scripts/resource-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_RESOURCE}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   song-db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: song-db
-      POSTGRES_USER: postgres  # Default, can be omitted if unchanged
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB_SONG}
+      POSTGRES_USER:  ${POSTGRES_USER}  # Default, can be omitted if unchanged
+      POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
+    networks:
+      - app-network
+    volumes:
+      - ./init-scripts/song-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB_SONG}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5   
 
+  resource-service:
+    image: resource-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=${RESOURCE_SERVICE_DATASOURCE_URL}
+      - SONG_SERVICE_URL=${SONG_SERVICE_URL}
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    depends_on:
+      resource-db:
+        condition: service_healthy
+
+  song-service:
+    image: song-service:latest
+    environment:
+      - SPRING_DATASOURCE_URL=${SONG_SERVICE_DATASOURCE_URL}
+      - RESOURCE_SERVICE_URL=${RESOURCE_SERVICE_URL}
+    ports:
+      - "8081:8081"
+    networks:
+      - app-network
+    depends_on:
+      song-db:
+        condition: service_healthy
+
+networks:
+  app-network:
+    external: true
 # Related settings for application.properties:
 # 
 # For resource-service:
