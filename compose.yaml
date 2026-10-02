@@ -7,8 +7,6 @@ services:
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"  # Maps container port 5432 to host port 5432
-    networks:
-      - app-network
     volumes:
       - ./init-scripts/resource-db:/docker-entrypoint-initdb.d
     healthcheck:
@@ -25,8 +23,6 @@ services:
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"  # Maps container port 5432 to host port 5433 (to avoid conflict)
-    networks:
-      - app-network
     volumes:
       - ./init-scripts/song-db:/docker-entrypoint-initdb.d
     healthcheck:
@@ -37,35 +33,33 @@ services:
 
   resource-service:
     image: resource-service:latest
+    build:
+      context: ./resource-service
+      dockerfile: Dockerfile
     environment:
       - SPRING_DATASOURCE_URL=${RESOURCE_SERVICE_DATASOURCE_URL}
       - SONG_SERVICE_URL=${SONG_SERVICE_URL}
     ports:
       - "8080:8080"
-    networks:
-      - app-network
     depends_on:
       resource-db:
         condition: service_healthy
 
   song-service:
     image: song-service:latest
+    build:
+      context: ./song-service
+      dockerfile: Dockerfile
     environment:
       - SPRING_DATASOURCE_URL=${SONG_SERVICE_DATASOURCE_URL}
       - RESOURCE_SERVICE_URL=${RESOURCE_SERVICE_URL}
     ports:
       - "8081:8081"
-    networks:
-      - app-network
     depends_on:
       song-db:
         condition: service_healthy
 
-networks:
-  app-network:
-    external: true
-# Related settings for application.properties:
-# 
+
 # For resource-service:
 # spring.datasource.url=jdbc:postgresql://localhost:5432/resource-db
 # spring.datasource.username=postgres
