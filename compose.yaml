@@ -32,7 +32,6 @@ services:
       retries: 5   
 
   resource-service:
-    image: resource-service:latest
     build:
       context: ./resource-service
       dockerfile: Dockerfile
@@ -46,7 +45,6 @@ services:
         condition: service_healthy
 
   song-service:
-    image: song-service:latest
     build:
       context: ./song-service
       dockerfile: Dockerfile

@@ -138,4 +138,15 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler()
+    public ResponseEntity<ErrorResponseDTO> restTemplateRequestError(RestTemplateErrorException ex) {
+
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(
+            "" + HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Error operation with another external service.\nError message: '%s'".formatted(ex.getMessage())
+        );
+
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.INTERNAL_SERVER_ERROR);
+    } 
 }

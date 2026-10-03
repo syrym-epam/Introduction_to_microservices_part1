@@ -27,6 +27,7 @@ import com.microservice.resource_service.dto.EntitySongDTO;
 import com.microservice.resource_service.exceptions.ContentTypeException;
 import com.microservice.resource_service.exceptions.DataNotFoundException;
 import com.microservice.resource_service.exceptions.MetaDataFieldResourceNotFoundException;
+import com.microservice.resource_service.exceptions.RestTemplateErrorException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -88,7 +89,8 @@ public class ServiceResource {
                         .or(() -> Optional.ofNullable(metadata.get("xmpDM:year")))
                         .filter(Predicate.not(String::isBlank))
                         .orElseThrow(() -> new MetaDataFieldResourceNotFoundException("year")));
-        entitySongDTO.setDuration(calcDurationMP3(metadata.get("xmpDM:duration")));
+        entitySongDTO.setDuration(calcDurationMP3(metadata.get("xmpDM:duration"))
+                        .orElseThrow(() -> new MetaDataFieldResourceNotFoundException("duration")));
 
         EntityResource entityResource = new EntityResource();
         entityResource.setFileData(data);
@@ -98,10 +100,8 @@ public class ServiceResource {
 
         try {
             restTemplate.postForObject(songServiceUrl + "/songs", entitySongDTO, EntitySongDTO.class);
-        } catch (HttpStatusCodeException ex) {
-
-        } catch (ResourceAccessException ex) {
-
+        } catch (Exception e) {
+            throw new RestTemplateErrorException(e.getMessage());
         }
 
         return entityResource.getId();
@@ -132,17 +132,16 @@ public class ServiceResource {
         return metadata;
     }
 
-    public String calcDurationMP3(String value) {
-        String duration = "00:00";
-        if (value != null) {
+    public Optional<String> calcDurationMP3(String value) {
+        if(value == null)
+            return Optional.empty();
+        else {
             double second = Double.parseDouble(value);
             int totalSecs = (int) Math.round(second);
             int mins = totalSecs / 60;
             int secs = totalSecs % 60;
-            duration = "%02d:%02d".formatted(mins, secs);
+            return Optional.of("%02d:%02d".formatted(mins, secs));
         }
-
-        return duration;
     }
 
     public Metadata extractMetadataFromMP3File(byte[] data){
@@ -164,14 +163,15 @@ public class ServiceResource {
         List<Long> Ids = Arrays.stream(data.split(",")).map(Long::valueOf).toList();
         List<Long> existingIds = repositoryResource.findExistingIds(Ids);
 
-        repositoryResource.deleteAllByIdInBatch(existingIds);
+        if (!existingIds.isEmpty()) {
+            try {
+                String result = existingIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+                restTemplate.delete(songServiceUrl + "/songs?id=" + result);
+            } catch (Exception e) {
+                throw new RestTemplateErrorException(e.getMessage());
+            }
 
-        String result = existingIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-
-        try {
-            restTemplate.delete(songServiceUrl + "/songs?id=" + result);
-        } catch (Exception e) {
-            System.out.println(e);
+            repositoryResource.deleteAllByIdInBatch(existingIds);
         }
 
         return existingIds;
