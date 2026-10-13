@@ -30,7 +30,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5   
-
+  eureka-service:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
   resource-service:
     build:
       context: ./resource-service
@@ -38,6 +45,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=${RESOURCE_SERVICE_DATASOURCE_URL}
       - SONG_SERVICE_URL=${SONG_SERVICE_URL}
+      - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
     ports:
       - "8080:8080"
     depends_on:
@@ -48,11 +56,15 @@ services:
     build:
       context: ./song-service
       dockerfile: Dockerfile
+    deploy:
+      # mode: replicated
+      replicas: 2
     environment:
       - SPRING_DATASOURCE_URL=${SONG_SERVICE_DATASOURCE_URL}
       - RESOURCE_SERVICE_URL=${RESOURCE_SERVICE_URL}
+      - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
     ports:
-      - "8081:8081"
+      - "8081-8083:8081"
     depends_on:
       song-db:
         condition: service_healthy

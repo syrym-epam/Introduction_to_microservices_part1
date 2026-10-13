@@ -14,13 +14,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.microservice.resource_service.dto.EntitySongDTO;
@@ -35,17 +33,19 @@ import jakarta.transaction.Transactional;
 @Service 
 public class ServiceResource {
 
-    @Value("${song-service.url}")
-    private String songServiceUrl; 
+    // @Value("${song-service.url}")
+    // private String songServiceUrl; 
 
     private final static String MEDIA_TYPE_MP3 = "audio/mpeg";
 
     private RepositoryResource repositoryResource;
     private final RestTemplate restTemplate;
+    private final DiscoveryClient discoveryClient;
     
-    public ServiceResource(RepositoryResource repositoryResource) {
+    public ServiceResource(RepositoryResource repositoryResource, DiscoveryClient discoveryClient) {
         this.repositoryResource = repositoryResource;
         this.restTemplate = new RestTemplate();
+        this.discoveryClient = discoveryClient;
     }
 
     public Long preSaveResource(@RequestBody byte[] data, HttpServletRequest request) throws IOException {
@@ -99,7 +99,7 @@ public class ServiceResource {
         entitySongDTO.setId(entityResource.getId());
 
         try {
-            restTemplate.postForObject(songServiceUrl + "/songs", entitySongDTO, EntitySongDTO.class);
+            restTemplate.postForObject(discoveryClient.getInstances("SONG-SERVICE").getFirst().getUri() + "/songs", entitySongDTO, EntitySongDTO.class);
         } catch (Exception e) {
             throw new RestTemplateErrorException(e.getMessage());
         }
@@ -166,7 +166,7 @@ public class ServiceResource {
         if (!existingIds.isEmpty()) {
             try {
                 String result = existingIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-                restTemplate.delete(songServiceUrl + "/songs?id=" + result);
+                restTemplate.delete(discoveryClient.getInstances("SONG-SERVICE").getFirst().getUri() + "/songs?id=" + result);
             } catch (Exception e) {
                 throw new RestTemplateErrorException(e.getMessage());
             }

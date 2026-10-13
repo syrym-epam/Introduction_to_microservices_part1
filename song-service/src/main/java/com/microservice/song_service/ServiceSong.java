@@ -3,10 +3,7 @@ package com.microservice.song_service;
 
 import java.util.Arrays;
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import com.microservice.song_service.dto.EntitySongDTO;
 import com.microservice.song_service.exceptions.DataNotFoundException;
 import com.microservice.song_service.exceptions.MetaDataExistExceptions;
@@ -15,9 +12,6 @@ import jakarta.transaction.Transactional;
 
 @Service 
 public class ServiceSong {
-
-    @Value("${resource-service.url}")
-    String resourceServiceUrl;
 
     private RepositorySong repositorySong;
 
