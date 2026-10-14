@@ -22,4 +22,4 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
 resource-service:
-  url: "${RESOURCE_SERVICE_URL:http://localhost:8080}"
+  url: "${RESOURCE_SERVICE_URL:http://localhost:8081}"
