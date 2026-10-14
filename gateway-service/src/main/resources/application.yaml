@@ -1,24 +1,34 @@
 server:
   port: 8080
+  tomcat:
+    max-swallow-size: 10MB
+    max-http-post-size: 10MB
 spring:
   application:
-    name: gateway
+    name: gateway-service
   cloud:
-      gateway:
-        mvc:  # <-- Crucial: make sure 'mvc' is included here
+    gateway:
+      server:
+        webflux:
           routes:
             - id: resource-route
               uri: lb://RESOURCE-SERVICE
               predicates:
-              - Path=/resources, /resources/**
-              filters:
-              - StripPrefix=0
+                - Path=/resources, /resources/**
+                - Method=GET,POST,PUT,DELETE
+              # filters:
+              # - StripPrefix=0
             - id: song-route
               uri: lb://SONG-SERVICE
               predicates:
-              - Path=/songs, /songs/**
-              filters:
-              - StripPrefix=0
+                - Path=/songs, /songs/**
+                - Method=GET,POST,PUT,DELETE
+              # filters:
+              # - StripPrefix=0
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 eureka:
   client:
     service-url: 
@@ -26,4 +36,3 @@ eureka:
     registry-fetch-interval-seconds: 5
   instance:
     lease-renewal-interval-in-seconds: 5
-
