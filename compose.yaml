@@ -38,6 +38,14 @@ services:
       - "8761:8761"
     environment:
       - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
   resource-service:
     build:
       context: ./resource-service
@@ -47,7 +55,7 @@ services:
       - SONG_SERVICE_URL=${SONG_SERVICE_URL}
       - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
       resource-db:
         condition: service_healthy
@@ -64,7 +72,7 @@ services:
       - RESOURCE_SERVICE_URL=${RESOURCE_SERVICE_URL}
       - EUREKA_SERVICE_URL=${EUREKA_SERVICE_URL}
     ports:
-      - "8081-8083:8081"
+      - "8082-8083:8082"
     depends_on:
       song-db:
         condition: service_healthy
